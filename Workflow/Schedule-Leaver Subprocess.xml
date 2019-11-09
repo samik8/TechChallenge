@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Workflow PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Workflow name="Schedule-Leaver Subprocess">
+  <Variable input="true" name="identityName">
+    <Description>The name of the identity.</Description>
+  </Variable>
+  <Description>Disable all accounts when an employee leaves the company.</Description>
+  <Step icon="Start" name="Start" posX="540" posY="10">
+    <Transition to="Remove Systems Access"/>
+  </Step>
+  <Step name="Remove Systems Access" posX="168" posY="18" resultVariable="EffectiveTime">
+    <Arg name="identityName" value="ref:identityName"/>
+    <Script>
+      <Source>
+				
+        import sailpoint.api.Provisioner;
+        import sailpoint.object.Identity;
+        import sailpoint.object.Link
+        import sailpoint.object.ProvisioningPlan.AccountRequest;
+        import sailpoint.object.ProvisioningPlan;
+        import sailpoint.object.ProvisioningPlan.AttributeRequest;
+        import java.util.List;
+        import java.util.ArrayList();
+        
+        Identity id = context.getObjectByName(Identity.class,identityName);
+        List links=id.getLinks(); //Fetch all links of identity
+        ProvisioningPlan revoke_plan = new ProvisioningPlan();
+        revoke_plan.setIdentity(id);
+        
+        List accRequests = new ArrayList();
+        AccountRequest accReq = new AccountRequest();
+        if(!links.isEmpty()){
+          for(Link link:links){
+            if(!(link.getApplicationName().equalsIgnoreCase("TechChallenge_AuthSource"))){
+			
+			//Deprovision all accounts except Authoritative application 
+              accReq.setOperation(AccountRequest.Operation.Delete);
+              accReq.setApplication(link.getApplicationName());
+              accReq.setNativeIdentity(identityName);
+              accRequests.add(accReq);
+              wfcase.addMessage(identityName+" removed from "+link.getApplicationName());
+            }
+          }
+        }
+        
+        revoke_plan.setAccountRequests(accRequests);
+        
+        Provisioner provisioner = new Provisioner(context);
+        provisioner.setAssigner("spadmin");
+        provisioner.compile(revoke_plan);
+        provisioner.execute();
+
+      </Source>
+    </Script>
+    <Transition to="Stop"/>
+  </Step>
+  <Step icon="Stop" name="Stop" posX="540" posY="10"/>
+</Workflow>

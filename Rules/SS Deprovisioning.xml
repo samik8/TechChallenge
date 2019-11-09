@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="SS Deprovisioning" type="JDBCOperationProvisioning">
+  <Description>This rule is used by the SS_System to deprovision the account</Description>
+  <Signature returnType="ProvisioningResult"/>
+  <Source>
+  
+  import sailpoint.object.Identity;
+  import java.sql.PreparedStatement;
+  import java.sql.Connection;
+  import java.sql.DriverManager;
+  import java.sql.SQLException;
+  import sailpoint.object.ProvisioningPlan.AccountRequest;
+  import sailpoint.object.ProvisioningResult;
+  import sailpoint.object.ProvisioningPlan.Operation;
+  
+  
+  AccountRequest acctRequest=(AccountRequest) request;
+  ProvisioningResult result=new ProvisioningResult();
+  try{
+    
+    if(acctRequest!=null){
+      String user=plan.getNativeIdentity();
+      Identity id=context.getObject(Identity.class,user);
+   
+      PreparedStatement ps=null;
+      String query="delete from ss_system where id="+id.getName()+";";
+      ps=connection.prepareStatement(query);
+      ps.executeUpdate();
+      result.setStatus(ProvisioningResult.STATUS_COMMITTED);
+    }
+  }
+  
+  catch(SQLException e){
+    result.setStatus(ProvisioningResult.STATUS_FAILED);
+    result.addError(e);
+  }
+  
+  return result;
+  
+  </Source>
+</Rule>

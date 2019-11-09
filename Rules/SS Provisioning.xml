@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="SS Provisioning" type="JDBCOperationProvisioning">
+  <Description>This rule is used by the SS_System to provision the account</Description>
+  <Signature returnType="ProvisioningResult"/>
+  <Source>
+  
+  import sailpoint.object.*;
+  import java.sql.Connection;
+  import java.sql.DriverManager;
+  import java.sql.SQLException;
+  import sailpoint.object.ProvisioningPlan.AccountRequest;
+  import sailpoint.object.ProvisioningPlan.AttributeRequest;
+  import sailpoint.object.ProvisioningResult;
+  import sailpoint.object.ProvisioningPlan.Operation;
+
+  
+  AccountRequest acctRequest=(AccountRequest) request;
+  ProvisioningResult result=new ProvisioningResult();
+  try{
+    if(acctRequest!=null){
+      String user=plan.getNativeIdentity();
+      Identity id=context.getObject(Identity.class,user);
+      List attrRequests=acctRequest.getAttributeRequests();
+    
+      for(AttributeRequest attrRequest: attrRequests){
+      
+        if(ProvisioningPlan.Operation.Add.equals(attrRequest.getOperation())){
+          PreparedStatement assignRole=null;
+          String query="insert into ss_system values ("+id.getName()+",'"+id.getFirstname()+"','"+id.getLastname()+"','"+attrRequest.getValue()+"');";
+          assignRole=connection.prepareStatement(query);
+          assignRole.executeUpdate();
+        }
+      }
+    
+            //set accountName attribute
+      AttributeRequest ar=new AttributeRequest();
+      ar.setName("native_identity");
+      ar.setOperation(Operation.Set);
+      ar.setValue(id.getName());
+      attrRequests.add(ar);
+    
+    
+      AttributeRequest ar=new AttributeRequest();
+      ar.setName("id");
+      ar.setOperation(Operation.Set);
+      ar.setValue(id.getName());
+      attrRequests.add(ar);
+    
+      acctRequest.setAttributeRequests(attrRequests);
+      result.setStatus(ProvisioningResult.STATUS_COMMITTED);
+   }
+  }
+  
+  catch(SQLException e){
+    result.setStatus(ProvisioningResult.STATUS_FAILED);
+    result.addError(e);
+  }
+  return result;
+  
+  </Source>
+</Rule>

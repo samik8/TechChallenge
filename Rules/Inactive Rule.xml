@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Inactive Rule" type="IdentityAttribute">
+  <Description>Identity attribute rule to set the Inactive attribute.</Description>
+  <Signature returnType="String"/>
+  <Source>
+  
+  if(link.getAttribute("STATUS").equalsIgnoreCase("I"))
+    return true;
+  
+  else
+    return false;
+  
+  </Source>
+</Rule>

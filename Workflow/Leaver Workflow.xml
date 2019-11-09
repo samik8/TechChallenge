@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Workflow PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Workflow explicitTransitions="true" libraries="Identity" name="Leaver Workflow" type="IdentityLifecycle">
+  <Variable input="true" name="identityName">
+    <Description>The name of the identity.</Description>
+  </Variable>
+  <Variable initializer="script:(identityDisplayName != void) ? identityDisplayName : resolveDisplayName(identityName)" input="true" name="identityDisplayName">
+    <Description>
+      The displayName of the identity being updated.
+      Query for this using a projection query and fall back to the name.
+    </Description>
+  </Variable>
+  <Variable initializer="LCM" input="true" name="source">
+    <Description>
+      String version of sailpoint.object.Source to indicate
+      where the request originated.  Defaults to LCM.
+    </Description>
+  </Variable>
+  <Variable initializer="false" input="true" name="trace">
+    <Description>
+      Used for debugging this workflow and when set to true trace
+      will be sent to stdout.
+    </Description>
+  </Variable>
+  <Description>Disable all accounts when an employee leaves the company.</Description>
+  <Step icon="Start" name="Start" posX="540" posY="10">
+    <Transition to="Check EffectiveDate"/>
+  </Step>
+  <Step name="Check EffectiveDate" posX="168" posY="18" resultVariable="EffectiveTime">
+    <Script>
+      <Source>
+	  
+	  //Calculate Effective date when the Leaver needs to be triggered
+		import java.util.Date;
+        import java.util.Calendar;
+        import java.text.SimpleDateFormat;
+        wfcase.addMessage(" eff date ");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.DATE,5);
+        Date scheduleDate = c.getTime();
+        return scheduleDate;
+        
+        //return new Date();
+       
+      </Source>
+    </Script>
+    <Transition to="Schedule Remove Access"/>
+  </Step>
+  <Step action="call:scheduleWorkflowEvent" icon="Task" name="Schedule Remove Access" posX="519" posY="13">
+    <Arg name="scheduleDate" value="ref:EffectiveTime"/>
+    <Arg name="identityName" value="ref:identityName"/>
+    <Arg name="workflow" value="Schedule-Leaver Subprocess"/>
+    <Arg name="requestName" value="script: return &quot;Scheduled Leaver Workflow of &quot; + identityName "/>
+    <Transition to="Stop"/>
+  </Step>
+  <Step icon="Stop" name="Stop" posX="540" posY="10"/>
+</Workflow>

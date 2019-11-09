@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="RK Provisioning" type="JDBCOperationProvisioning">
+  <Description>This rule is used by the RK_System to provision the account</Description>
+  <Signature returnType="ProvisioningResult">
+    <Inputs>
+      <Argument name="log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="application">
+        <Description>The application whose data file is being processed.</Description>
+      </Argument>
+      <Argument name="schema">
+        <Description>The Schema currently in use.</Description>
+      </Argument>
+      <Argument name="connection">
+        <Description>A connection object to connect to database.</Description>
+      </Argument>
+      <Argument name="plan">
+        <Description>The ProvisioningPlan created against the JDBC application.</Description>
+      </Argument>
+      <Argument name="request">
+        <Description>The ProvisioningRequest created against the JDBC application.</Description>
+      </Argument>
+    </Inputs>
+    <Returns>
+      <Argument name="result">
+        <Description>A Provisioning Result object is desirable to return the status.IT can be a new object or part of  Provisioning Plan</Description>
+      </Argument>
+    </Returns>
+  </Signature>
+  <Source>
+  import sailpoint.object.*;
+  import java.sql.Connection;
+  import java.sql.DriverManager;
+  import java.sql.SQLException;
+  import sailpoint.object.ProvisioningPlan.AccountRequest;
+  import sailpoint.object.ProvisioningPlan.AttributeRequest;
+  import sailpoint.object.ProvisioningResult;
+  import sailpoint.object.ProvisioningPlan.Operation;
+  import sailpoint.object.Bundle;
+  
+  AccountRequest acctRequest=(AccountRequest) request;
+  ProvisioningResult result=new ProvisioningResult();
+  try{
+    if(acctRequest!=null){
+     String user=plan.getNativeIdentity();
+      Identity id=context.getObject(Identity.class,user);
+      List attrRequests=acctRequest.getAttributeRequests();
+    
+      for(AttributeRequest attrRequest: attrRequests){
+      
+        if(ProvisioningPlan.Operation.Add.equals(attrRequest.getOperation())){
+          PreparedStatement assignRole=null;
+          String query="insert into rk_system values ("+id.getName()+",'"+id.getFirstname()+"','"+id.getLastname()+"','"+id.getFirstname()+" "+id.getLastname()+"','"+attrRequest.getValue()+"');";
+          assignRole=connection.prepareStatement(query);
+          assignRole.executeUpdate();
+        }
+      }  
+    
+            //set accountName attribute
+      AttributeRequest ar=new AttributeRequest();
+      ar.setName("native_identity");
+      ar.setOperation(Operation.Set);
+      ar.setValue(id.getName());
+      attrRequests.add(ar);
+    
+    
+      AttributeRequest ar=new AttributeRequest();
+      ar.setName("id");
+      ar.setOperation(Operation.Set);
+      ar.setValue(id.getName());
+      attrRequests.add(ar);
+    
+      acctRequest.setAttributeRequests(attrRequests);
+      result.setStatus(ProvisioningResult.STATUS_COMMITTED);
+   }
+  }
+  
+  catch(SQLException e){
+    result.setStatus(ProvisioningResult.STATUS_FAILED);
+    result.addError(e);
+  }
+  return result;
+  
+  </Source>
+</Rule>

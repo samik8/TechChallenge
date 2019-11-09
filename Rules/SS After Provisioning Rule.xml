@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="SS After Provisioning Rule" type="AfterProvisioning">
+  <Description>This rule provision the account on RK_System through Role Assignment when the account has been provisioned into SS_System</Description>
+  <Signature>
+    <Inputs>
+      <Argument name="log">
+        <Description>
+          The log object associated with the SailPointContext.
+        </Description>
+      </Argument>
+      <Argument name="context">
+        <Description>
+          A sailpoint.api.SailPointContext object that can be used to query the database if necessary.
+        </Description>
+      </Argument>
+      <Argument name="plan">
+        <Description>
+          The ProvisioningPlan object on its way to the Connector.
+        </Description>
+      </Argument>
+      <Argument name="application">
+        <Description>
+          The application object that references this before/after script.
+        </Description>
+      </Argument>
+      <Argument name="result">
+        <Description>
+          The ProvisioningResult object returned by the connectors provision method. This can be null and in many cases the connector will  not return a result and instead will annotate the plan's ProvisioningResult either at the plan or account level.        
+        </Description>
+      </Argument>
+    </Inputs>
+  </Signature>
+  <Source>
+  
+  import sailpoint.object.*;
+  import java.sql.SQLException;
+
+  import sailpoint.object.ProvisioningPlan.AccountRequest;
+  import sailpoint.object.ProvisioningPlan.AttributeRequest;
+  import sailpoint.object.ProvisioningResult;
+  import sailpoint.object.ProvisioningPlan.Operation;
+  import sailpoint.api.Provisioner;
+
+  
+  String idName=plan.getNativeIdentity();
+  
+  ProvisioningPlan provisioningPlan =new ProvisioningPlan();
+  ProvisioningResult result=new ProvisioningResult();
+  
+  try{
+    
+    if(provisioningPlan!=null){
+
+      List acctRequest=plan.getAccountRequests();
+      
+      for(aR:acctRequest){
+        
+        if(ProvisioningPlan.AccountRequest.Operation.Create.equals(aR.getOperation()) || ProvisioningPlan.AccountRequest.Operation.Modify.equals(aR.getOperation())){
+          List attrRequests=aR.getAttributeRequests();
+		  
+		  //create a new provisioning plan to assign roles when operation is Create or Modify
+          provisioningPlan.setIdentity(context.getObject(Identity.class,idName));
+          for(attrRequest : attrRequests){
+            if(attrRequest.getName().equalsIgnoreCase("role")){
+              if(attrRequest.getValue() instanceof String){
+                String entitlement=attrRequest.getValue();
+                String roleName="RK_"+entitlement;
+                provisioningPlan.add("RK_System",idName,"assignedRoles",ProvisioningPlan.Operation.Add,roleName);
+                provisioningPlan.add("IIQ",idName,"assignedRoles",ProvisioningPlan.Operation.Add,roleName);
+              }
+              else{
+              
+                List entitlements=attrRequest.getValue();
+
+                for(entitlement : entitlements){
+                  String roleName="RK_"+entitlement;
+                  provisioningPlan.add("RK_System",idName,"assignedRoles",ProvisioningPlan.Operation.Add,roleName);
+                  provisioningPlan.add("IIQ",idName,"assignedRoles",ProvisioningPlan.Operation.Add,roleName);
+                }   
+              }
+            }
+          }
+        }
+        
+        if(ProvisioningPlan.AccountRequest.Operation.Delete.equals(aR.getOperation())){
+          Identity id=context.getObjectByName(Identity.class,idName);
+		  
+		  //create a new provisioning plan to deassign roles when operation is Delete
+          List bundles=id.getAssignedRoles();
+          ProvisioningPlan new_plan=new ProvisioningPlan();
+          
+          if(bundles!=null &amp;&amp; !bundles.isEmpty()){
+            AccountRequest accountRequest = new AccountRequest();
+           
+            new_plan.add(accountRequest);
+            accountRequest.setNativeIdentity(idName);
+            accountRequest.setOperation(ProvisioningPlan.AccountRequest.Operation.Modify);
+            accountRequest.setApplication("IIQ");
+           
+            for (Bundle b: bundles) {
+              AttributeRequest attributeRequest = new AttributeRequest(ProvisioningPlan.ATT_IIQ_ASSIGNED_ROLES , ProvisioningPlan.Operation.Remove, b.getName());
+              accountRequest.add(attributeRequest);
+            }
+             
+            provisioningPlan.setIdentity(context.getObject(Identity.class,idName));
+    				provisioningPlan.add("IIQ",idName,"assignedRoles",ProvisioningPlan.Operation.Remove,accountRequest.getAttributeRequests().get(0).getValue());
+           
+         }
+        }
+      }
+      
+	  //Execute Provisioning plan through provisioner
+      Provisioner p=new Provisioner(context);
+	  p.execute(provisioningPlan);
+      result.setStatus(ProvisioningResult.STATUS_COMMITTED);
+    }
+  }
+  
+  catch(Exception e){
+    result.setStatus(ProvisioningResult.STATUS_FAILED);
+    result.addError(e);
+  }
+
+  return result;
+  
+  </Source>
+</Rule>

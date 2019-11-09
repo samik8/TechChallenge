@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE Rule PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<Rule language="beanshell" name="Auth Source Customization Rule" type="ResourceObjectCustomization">
+  <Description>This rule sets the IIQ Disabled attribute on identity to true or false based on value of status</Description>
+  <Signature returnType="ResourceObject"/>
+  <Source>
+  
+  String status=object.getAttribute("STATUS");
+  
+  if(status.equalsIgnoreCase("I"))
+    object.put("IIQDisabled",true);
+  
+  else
+    object.put("IIQDisabled",false);
+  
+  return object;
+   </Source>
+</Rule>
