@@ -6,7 +6,7 @@
   </AccountCorrelationConfig>
   <Attributes>
     <Map>
-      <entry key="SQL" value="select * from ss_system;"/>
+      <entry key="SQL" value="%%query_ss%%"/>
       <entry key="afterProvisioningRule" value="SS After Provisioning Rule"/>
       <entry key="aggregationMode">
         <value>
@@ -18,7 +18,7 @@
       <entry key="disableOrderingCheck" value="true"/>
       <entry key="driverClass" value="com.mysql.jdbc.Driver"/>
       <entry key="getDeltaSQL"/>
-      <entry key="getObjectSQL" value="select * from ss_system;"/>
+      <entry key="getObjectSQL" value="%%query_ss%%"/>
       <entry key="indexColumns">
         <value>
           <List>
@@ -59,7 +59,7 @@
         </value>
       </entry>
       <entry key="partitionStatements"/>
-      <entry key="password" value="1:xDikd6BMwY+LL9iXETAjBg=="/>
+      <entry key="password" value="%%pwd_ss%%"/>
       <entry key="provisionRule" value="operationRule"/>
       <entry key="sysDescriptions">
         <value>
