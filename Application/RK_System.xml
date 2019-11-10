@@ -6,7 +6,7 @@
   </AccountCorrelationConfig>
   <Attributes>
     <Map>
-      <entry key="SQL" value="select * from rk_system;"/>
+      <entry key="SQL" value="%%query_rk%%"/>
       <entry key="aggregationMode">
         <value>
           <Boolean></Boolean>
@@ -17,7 +17,7 @@
       <entry key="disableOrderingCheck" value="true"/>
       <entry key="driverClass" value="com.mysql.jdbc.Driver"/>
       <entry key="getDeltaSQL"/>
-      <entry key="getObjectSQL" value="select * from rk_system;"/>
+      <entry key="getObjectSQL" value="%%query_rk%%"/>
       <entry key="indexColumns">
         <value>
           <List>
@@ -58,7 +58,7 @@
         </value>
       </entry>
       <entry key="partitionStatements"/>
-      <entry key="password" value="1:xDikd6BMwY+LL9iXETAjBg=="/>
+      <entry key="password" value="%%pwd_rk%%"/>
       <entry key="provisionRule" value="operationRule"/>
       <entry key="sysDescriptions">
         <value>
