@@ -5,7 +5,7 @@
     <Map>
       <entry key="compositeDefinition"/>
       <entry key="delimiter" value=","/>
-      <entry key="file" value="/home/spadmin/Desktop/Files/TechChallenge_AuthSource.csv"/>
+      <entry key="file" value="%%auth_file_path%%"/>
       <entry key="fileEncoding" value="UTF-8"/>
       <entry key="filetransport" value="local"/>
       <entry key="filterEmptyRecords">
